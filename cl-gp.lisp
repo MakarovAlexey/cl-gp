@@ -36,16 +36,37 @@
 	      (make-grow-node elements terminals maximum-depth (+ current-depth 1)))
 	element)))
 
+(defun crossover (first-parent second-parent)
+  (let* ((first-parent-node-id (random (nodes-count first-parent)))
+	 (second-parent-node-id (random (nodes-count second-parent)))
+	 (first-child (copy-tree first-parent))
+	 (second-child (copy-tree second-parent)))
+    (setf (node-of first-child first-parent-node-id) (node-of second-child second-parent-node-id)
+	  (node-of second-child first-parent-node-id) (node-of first-child second-parent-node-id))
+    (values first-child second-child)))
+
+(defun nodes (node)
+  (if (listp node)
+      (list* node (apply #'concatenate 'list
+			 (map 'list #'nodes (rest node))))
+      (list node)))
+
+(defun nodes-count (tree)
+  (length (nodes tree)))
+
+(defun random-node (individual)
+  (node-of individaul (random (nodes-count individual))))
+
 (defun individual-length (individual)
   (if (listp individual)
       (+ 1 (reduce #'max (mapcar #'individual-length individual))) 1))
 
+(defun nodes-count (individual)
+  (+ (mapcar #'nodes-countdual-length individual)
 
 
 
 
-(defun crossover (first-parent second-parent)
-  nil)
 
 
 
