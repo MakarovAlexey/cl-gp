@@ -6,7 +6,7 @@
   (let* ((individuals-in-group-count (/ count (- depth 1))))
     (loop for group-depth from 2 to depth append
 	 (loop repeat (/ individuals-in-group-count 2) append
-	      (list (make-full-individual terminals functions group-depth)
+	      (list (make-full-individual terminals functions depth)
 		    (make-grow-individual terminals functions group-depth))))))
 
 (defun make-full-individual (terminals functions maximum-depth)
@@ -29,57 +29,61 @@
 	  (make-grow-node elements terminals maximum-depth 2))))
 
 (defun make-grow-node (elements terminals maximum-depth current-depth)
-  (let* ((element (elt elements (random (- (length elements) 1)))))
+  (let* ((element (elt elements (random (length elements) ))))
     (if (functionp element)
 	(list element
 	      (make-grow-node elements terminals maximum-depth (+ current-depth 1))
 	      (make-grow-node elements terminals maximum-depth (+ current-depth 1)))
 	element)))
 
+(defun node-of (tree path)
+  (if (not (null path))
+      (node (elt tree (first path)) (rest path))
+      tree))
+
+(defun (setf node-of) (node tree path)
+  (let ((next-node (elt tree (first path)))
+	(next-node-path (rest path)))
+    (if (not (null next-node-path))
+	(setf (node-of next-node next-node-path) node)
+	(setf (elt tree (first path)) node)))
+  tree)
+
+(defun random-path (node &optional path)
+  (let ((next-node-number (if (not (null path))
+			      (random (length node))
+			      (+ (random (- (length node) 1)) 1))))
+    (if (> next-node-number 0)
+	(let ((next-node (elt node next-node-number))
+	      (next-node-path (cons next-node-number path)))
+	  (if (listp next-node)
+	      (random-path next-node next-node-path)
+	      (reverse next-node-path)))
+	(reverse path))))
+
 (defun crossover (first-parent second-parent)
-  (let* ((first-parent-node-id (random (nodes-count first-parent)))
-	 (second-parent-node-id (random (nodes-count second-parent)))
+  (let* ((first-parent-node-path (random-path first-parent))
+	 (second-parent-node-path (random-path second-parent))
 	 (first-child (copy-tree first-parent))
 	 (second-child (copy-tree second-parent)))
-    (setf (node-of first-child first-parent-node-id) (node-of second-child second-parent-node-id)
-	  (node-of second-child first-parent-node-id) (node-of first-child second-parent-node-id))
+    (setf (node-of first-child first-parent-node-path)
+	  (node-of second-parent second-parent-node-path)
+	  (node-of second-child second-parent-node-path)
+	  (node-of first-parent first-parent-node-path))
     (values first-child second-child)))
 
-(defun nodes (node)
-  (if (listp node)
-      (list* node (apply #'concatenate 'list
-			 (map 'list #'nodes (rest node))))
-      (list node)))
-
-(defun nodes-count (tree)
-  (length (nodes tree)))
-
-(defun random-node (individual)
-  (node-of individaul (random (nodes-count individual))))
-
-(defun individual-length (individual)
-  (if (listp individual)
-      (+ 1 (reduce #'max (mapcar #'individual-length individual))) 1))
-
-(defun nodes-count (individual)
-  (+ (mapcar #'nodes-countdual-length individual)
-
-
-
-
-
-
+(defun mutate (individual probability terminals functions maximum-depth)
+  (when (< (random 1.0) probability)
+    (let ((path (random-path individual)))
+      (setf (node-of individual path)
+	    (make-grow-individual terminals
+				  functions
+				  (- maximum-depth (length path)))))))
 
 (defvar *population*
   (make-population 600 6
 		   (list* 'x (loop for x from -5 to 5 collect x))
 		   '(+ - * /)))
-
-
-
-;; Популяция - вектор фиксированного рзмера с предвариательной инициализацией
-
-
 
 (defparameter *terminals* (list* 'x (loop for x from -5 to 5 collect x)))
 
