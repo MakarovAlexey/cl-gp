@@ -2,7 +2,7 @@
 
 (asdf:defsystem #:cl-gp
   :serial t
-  :depends-on (hu.dwim.defclass-star)
+  :depends-on (:closer-mop)
   :components ((:file "package")
                (:file "cl-gp")))
 
